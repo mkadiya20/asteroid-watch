@@ -14,3 +14,14 @@
 - Utilized AWS secrets manager to store `api_key` and `google service account credentials`.
 - Connected to Google Datastore as a NoSQL database to store all asteroid data.
 - [NASA Near Earth Object Web Service (NeoWs) API](https://api.nasa.gov/)
+
+## Lambda Functions
+### Asteroid Data Function
+- This lambda function fetches the data from NASA NeoWs API.
+- Processes and stores the data in Google datastore.
+- Triggers once every week to add new asteroid data using AWS EventBridge.
+
+### Asteroid Watch Function
+- This lambda function aggregates the data to show meaningful information.
+- Fetches the asteroid data from Google datastore.
+- Triggers on an HTTP request.
