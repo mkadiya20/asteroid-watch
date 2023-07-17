@@ -1,0 +1,5 @@
+indexes:
+- kind: asteroids
+  properties:
+  - name: id
+    direction: asc

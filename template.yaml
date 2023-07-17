@@ -1,0 +1,71 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Asteroid Watch
+
+
+Resources:
+  AsteroidDataFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Timeout: 120
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/lambda-role
+      Architectures:
+        - x86_64
+      Events:
+        DailyTrigger:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 12 ? * MON *)
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./asteroid_data
+      DockerTag: python3.10-v1
+
+  AsteroidDataEventBridgeRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Description: Weekly trigger for the AsteroidDataFunction
+      ScheduleExpression: cron(0 12 ? * MON *)
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt AsteroidDataFunction.Arn
+          Id: AsteroidDataFunction
+  
+  AsteroidWatchFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      PackageType: Image
+      Timeout: 120
+      Role: !Sub arn:aws:iam::${AWS::AccountId}:role/lambda-role
+      Architectures:
+        - x86_64
+      Events:
+        AsteroidWatchApi:
+          Type: Api
+          Properties:
+            Path: /asteroid_watch
+            Method: get
+    Metadata:
+      Dockerfile: Dockerfile
+      DockerContext: ./asteroid_watch
+      DockerTag: python3.10-v1
+
+  AsteroidWatchApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Prod
+      DefinitionBody:
+        swagger: '2.0'
+        info:
+          title:
+            Ref: AWS::StackName
+        paths:
+          /asteroid_watch:
+            get:
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${AsteroidWatchFunction.Arn}/invocations
